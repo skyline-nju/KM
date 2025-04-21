@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   double snap_log_sep = atof(argv[7]);
 
   int seed = atoi(argv[8]);
-  std::string ini_mode = argv[9];  // should be "rand", "ordered" or "resume"
+  std::string ini_mode = argv[9];  // should be "bimodal" or "resume"
 
   int snap_interval = 1;
   if (snap_log_sep > 1) {

@@ -107,9 +107,6 @@ void OrderParaExporter::dump(int i_step, const std::vector<TPar>& birds) {
 }
 
 
-
-
-
 class Snap_GSD_2 : public ExporterBase {
 public:
   Snap_GSD_2(const std::string& filename,
