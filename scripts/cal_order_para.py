@@ -166,7 +166,7 @@ if __name__ == "__main__":
     rho0 = 1
     D_psi = 0.1   # temperature for spins
     sigma = 0.0
-    L = 1024
+    L = 2048
     D_theta = 0.
     t_arr, phi_arr = read_op_series(L, rho0, D_psi, sigma, D_theta)
     plt.plot(t_arr, phi_arr)
