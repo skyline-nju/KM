@@ -72,8 +72,8 @@ void ini(std::vector<TPar>& p_arr, const TDomain& dm, TCellList& cl,
       p_arr.push_back(TPar());
       p_arr[j].pos.x = x[i];
       p_arr[j].pos.y = y[i];
-      p_arr[j].theta = theta[j];
-      p_arr[j].psi = psi[j];
+      p_arr[j].theta = theta[i];
+      p_arr[j].psi = psi[i];
       p_arr[j].omega = omega[i];
     }
   }
