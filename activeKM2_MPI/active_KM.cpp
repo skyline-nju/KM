@@ -13,7 +13,6 @@ void run(const Vec_2<double>& gl_l,
   int my_rank, tot_proc;
   MPI_Comm_rank(group_comm, &my_rank);
   MPI_Comm_size(group_comm, &tot_proc);
-  Ranq1 myran(seed + my_rank);
   std::vector<node_t> p_arr;
   const double r_cut = 1.0;
 
@@ -39,12 +38,6 @@ void run(const Vec_2<double>& gl_l,
     //cl.for_each_pair_fast(f1, f3);
     };
 
-  // ini integrator
-  MotileOscillatorEM integrator(h, D_theta, D_psi, v0);
-
-  auto one_par_move = [&integrator, &dm, &myran, h](node_t& p) {
-    integrator.update(p, dm, myran);
-  };
 
 
   // set output
@@ -84,12 +77,32 @@ void run(const Vec_2<double>& gl_l,
   snprintf(op_file, 255, "%s%s_t%d.dat", op_folder, basename, start);
   io::OrderParaExporter op(op_file, start, n_step, op_interval, gl_np, group_comm);
 
+  Ranq1 myran(seed + my_rank + start);
+
+
   // initialize particles and celllist
   ini(p_arr, dm, cl, rho0, sigma, ini_mode, myran, gsd, 20.);
+
+  // ini integrator
+  MotileOscillatorEM integrator(h, D_theta, D_psi, v0);
+
+  auto one_par_move = [&integrator, &dm, &myran, h](node_t& p) {
+    integrator.update(p, dm, myran);
+  };
 
   // run
   for (int t = 1; t <= n_step; t++) {
     cal_force(p_arr, cl, comm, for_all_pair_force);
+
+#ifdef POS_OMEGA
+    for (auto& p : p_arr) {
+      if (p.pos.x < gl_l.x * 0.5) {
+        p.omega = sigma;
+      } else {
+        p.omega = -sigma;
+      }
+    }
+#endif
 
     integrate(p_arr, cl, one_par_move, comm);
     gsd.dump(t, p_arr);

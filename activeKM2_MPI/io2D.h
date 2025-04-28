@@ -256,9 +256,7 @@ void Snap_GSD_2::dump(int i_step, const std::vector<TPar>& p_arr) {
       gsd_write_chunk(handle_, "particles/N", GSD_TYPE_UINT32, 1, 1, 0, &n_par);
       gsd_write_chunk(handle_, "particles/position", GSD_TYPE_FLOAT, n_par, 3, 0, pos);
       gsd_write_chunk(handle_, "particles/charge", GSD_TYPE_FLOAT, n_par, 1, 0, psi);
-      if (nframes == 0) {
-        gsd_write_chunk(handle_, "particles/mass", GSD_TYPE_FLOAT, n_par, 1, 0, omega);
-      }
+      gsd_write_chunk(handle_, "particles/mass", GSD_TYPE_FLOAT, n_par, 1, 0, omega);
       gsd_end_frame(handle_);
     }
     delete[] pos;
@@ -291,7 +289,7 @@ void io::Snap_GSD_2::read(int i_frame,
     gsd_read_chunk(handle_, psi_in, chunk);
 
     float* omega_in = new float[n_par];
-    chunk = gsd_find_chunk(handle_, 0, "particles/mass");
+    chunk = gsd_find_chunk(handle_, i_frame, "particles/mass");
     gsd_read_chunk(handle_, omega_in, chunk);
 
     double half_Lx = gl_l_.x * 0.5;

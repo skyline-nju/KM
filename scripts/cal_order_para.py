@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from add_line import add_line
 
 
-def read_op_series(L, rho0, D_psi, sigma, D_theta, h=0.1, v0=1., seed=1000):
+def read_op_series(L, rho0, D_psi, sigma, D_theta, h=0.1, v0=1., seed=1000, ret_theta=False):
     pat = f"../data/op/L{L:d}_{L:d}_r{rho0:g}_v{v0:g}_T{D_psi:g}_s{sigma:g}_D{D_theta:.4f}_h{h:g}_S{seed:d}_t*.dat"
     files = glob.glob(pat)
     lines_dict = {}
@@ -17,6 +17,8 @@ def read_op_series(L, rho0, D_psi, sigma, D_theta, h=0.1, v0=1., seed=1000):
             lines_dict[t_beg] = lines
             n_lines += len(lines)
     phi_arr = np.zeros(n_lines)
+    if ret_theta:
+        theta_arr = np.zeros_like(phi_arr)
     i = 0
     flag_remove_last_line = False
     for t_beg in sorted(lines_dict.keys()):
@@ -27,14 +29,23 @@ def read_op_series(L, rho0, D_psi, sigma, D_theta, h=0.1, v0=1., seed=1000):
             s = line.rstrip("\n").split("\t")
             try:
                 phi_arr[i] = float(s[1])
+                if ret_theta:
+                    theta_arr[i] = float(s[2])
             except IndexError:
                 phi_arr[i] = phi_arr[i-1]
+                if ret_theta:
+                    theta_arr[i] = theta_arr[i-1]
             except ValueError:
                 phi_arr[i] = phi_arr[i-1]
+                if ret_theta:
+                    theta_arr[i] = theta_arr[i-1]
 
             i += 1
     t_arr = (np.arange(phi_arr.size) + 1) * 100 * h
-    return t_arr, phi_arr
+    if not ret_theta:
+        return t_arr, phi_arr
+    else:
+        return t_arr, phi_arr, theta_arr
 
 
 def varied_D_theta():
@@ -129,8 +140,8 @@ def varied_D_psi():
             L_arr = np.array([32, 64, 128, 256])
             ncuts = [20000, 20000, 20000, 5000]
         elif D_psi == 0.5:
-            L_arr = np.array([32, 64, 128, 256, 512, 1024])
-            ncuts = [20000, 20000, 20000, 20000, 20000, 30000]
+            L_arr = np.array([32, 64, 128, 256, 512, 1024, 2048])
+            ncuts = [20000, 20000, 20000, 20000, 20000, 30000, 120000]
         elif D_psi == 0.53:
             L_arr = np.array([32, 64, 128, 256, 512])
             ncuts = [20000, 20000, 20000, 20000, 10000]
@@ -165,12 +176,14 @@ def varied_D_psi():
 if __name__ == "__main__":
     rho0 = 1
     D_psi = 0.1   # temperature for spins
-    sigma = 0.0
-    L = 2048
+    sigma = 0.2
+    L = 1024
     D_theta = 0.
-    t_arr, phi_arr = read_op_series(L, rho0, D_psi, sigma, D_theta)
-    plt.plot(t_arr, phi_arr)
+    t_arr, phi_arr, theta_arr = read_op_series(L, rho0, D_psi, sigma, D_theta, ret_theta=True)
 
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, constrained_layout=True)
+    ax1.plot(t_arr, phi_arr)
+    ax2.plot(t_arr, theta_arr)
     # plt.xscale("log")
     # plt.yscale("log")
     plt.show()

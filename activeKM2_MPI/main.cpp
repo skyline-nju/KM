@@ -3,7 +3,7 @@
 int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
-  double Lx = 256;
+  double Lx = 512;
   double Ly = 256;
 
   double rho0 = atof(argv[1]);
