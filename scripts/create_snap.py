@@ -561,13 +561,14 @@ def split(s, x_shift=0):
 if __name__ == "__main__":
     folder = r"../data/snap"
     # folder = "build/data"
-    basename = "L512_512_r1_v1_T0.1_s0.2_D0.2000_h0.1_S1000.gsd"
+    basename = "L1024_1024_r1_v1_T0.1_s0.2_D0.0000_h0.1_S1000.gsd"
 
     fname_in = f"{folder}/{basename}"
     with hoomd.open(name=fname_in, mode='r') as fin:
-        snap = fin[-1]
+        print(len(fin))
+        snap = fin[0]
 
-    fname_out = f"{folder}/L512_512_r1_v1_T0.1_s0.2_D0.2000_h0.1_S21186.gsd"
+    fname_out = f"{folder}/L1024_1024_r1_v1_T0.1_s0.2_D0.0000_h0.1_S2099.gsd"
     with hoomd.open(name=fname_out, mode='w') as fout:
         snap.configuration.step = 0
         fout.append(snap)

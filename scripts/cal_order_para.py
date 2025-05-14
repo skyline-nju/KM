@@ -119,6 +119,7 @@ def varied_sigma():
     ax.set_ylabel(r"$P$", fontsize="x-large")
 
     add_line(ax, 0, 1, 1, -1/16, label=r"$N^{-1/16}$", xl=0.65, yl=0.85)
+    add_line(ax, 0, 0.95, 1, -0.00625)
     add_line(ax, 0, 0.83, 1, -1/16)
     add_line(ax, 0, 1, 1, -1/2, label=r"$N^{-1/2}$", yl=0.5)
     plt.show()
@@ -134,61 +135,77 @@ def varied_D_psi():
     D_theta = 0
     for D_psi in [0.1, 0.2, 0.3, 0.4, 0.5, 0.53, 0.55, 0.6]:
         if D_psi == 0.1:
-            L_arr = np.array([32, 64, 128, 256, 512, 1024])
-            ncuts = [20000, 20000, 20000, 20000, 40000, 40000]
+            L_arr = np.array([32, 64, 128, 256, 512, 1024, 2048])
+            ncuts = [20000, 20000, 20000, 20000, 40000, 60000, 120000]
+            seeds = [1000, 1000, 1000, 1000, 1000, 1000, 1000]
         elif D_psi == 0.2 or D_psi == 0.3 or D_psi == 0.4:
             L_arr = np.array([32, 64, 128, 256])
             ncuts = [20000, 20000, 20000, 5000]
+            seeds = [1000, 1000, 1000, 1000]
         elif D_psi == 0.5:
             L_arr = np.array([32, 64, 128, 256, 512, 1024, 2048])
-            ncuts = [20000, 20000, 20000, 20000, 20000, 30000, 120000]
+            ncuts = [20000, 20000, 20000, 20000, 20000, 40000, 120000]
+            seeds = [1000, 1000, 1000, 1000, 1000, 1001, 1000]
         elif D_psi == 0.53:
             L_arr = np.array([32, 64, 128, 256, 512])
             ncuts = [20000, 20000, 20000, 20000, 10000]
+            seeds = [1000, 1000, 1000, 1000, 1000]
         elif D_psi == 0.55 or D_psi == 0.6:
             L_arr = np.array([32, 64, 128, 256, 512])
             ncuts = [20000, 10000, 10000, 10000, 10000]
+            seeds = [1000, 1000, 1000, 1000, 1000]
 
         phi_m = np.zeros(L_arr.size)
 
 
         for i, L in enumerate(L_arr):
-            t_arr, phi_arr = read_op_series(L, rho0, D_psi, sigma, D_theta)
+            t_arr, phi_arr = read_op_series(L, rho0, D_psi, sigma, D_theta, seed=seeds[i])
 
             print(phi_arr.size)
             phi_m[i] = np.mean(phi_arr[ncuts[i]:])
         ax.plot(L_arr**2, phi_m, "-o", label=r"$%g$" % D_psi)
 
-        ax.set_xscale("log")
-        ax.set_yscale("log")
-        ax.legend(title=r"$v_0=1,T=$", title_fontsize="x-large", fontsize="x-large")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    # ax.legend(title=r"$v_0=1,T=$", title_fontsize="x-large", fontsize="x-large")
 
     ax.set_xlabel(r"$N$", fontsize="x-large")
     ax.set_ylabel(r"$P$", fontsize="x-large")
 
-    add_line(ax, 0, 1, 1, -1/16, label=r"$N^{-1/16}$", xl=0.65, yl=0.85)
-    add_line(ax, 0, 0.83, 1, -1/16)
-    add_line(ax, 0, 1, 1, -1/2, label=r"$N^{-1/2}$", yl=0.5)
+    plt.suptitle(r"$\sigma=0,D_\psi=0$",fontsize="xx-large")
+
+    ax.set_ylim(0.35, 1)
+    add_line(ax, 0, 0.935, 1, -0.0062, label=r"$N^{-0.0062}$", yl=0.85)
+
+    # add_line(ax, 0, 1, 1, -1/16, label=r"$N^{-1/16}$", xl=0.65, yl=0.85)
+    # add_line(ax, 0, 0.83, 1, -1/16)
+    add_line(ax, 0, 0.552, 1, -1/19, label=r"$N^{-1/19}$", yl=0.4)
+    # add_line(ax, 0, 0.845, 1, -1/19)
+    # add_line(ax, 0, 1, 1, -1/2, label=r"$N^{-1/2}$", yl=0.45)
+
     plt.show()
     plt.close()
 
 
 if __name__ == "__main__":
     rho0 = 1
-    D_psi = 0.1   # temperature for spins
-    sigma = 0.2
-    L = 1024
+    D_psi = 0.1  # temperature for spins
+    sigma = 0.
+    L = 2048
     D_theta = 0.
-    t_arr, phi_arr, theta_arr = read_op_series(L, rho0, D_psi, sigma, D_theta, ret_theta=True)
+    seed = 1000
+    t_arr, phi_arr, theta_arr = read_op_series(L, rho0, D_psi, sigma, D_theta, seed=seed, ret_theta=True)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, constrained_layout=True)
     ax1.plot(t_arr, phi_arr)
     ax2.plot(t_arr, theta_arr)
-    # plt.xscale("log")
-    # plt.yscale("log")
+
+    # ax1.set_xscale("log")
+    # ax1.set_yscale("log")
+    # add_line(ax1, 0, 1, 1, -0.00625, label=r"$N^{-1/16}$", xl=0.65, yl=0.85)
+
     plt.show()
     plt.close()
-
    
     # varied_D_psi()
-    # varied_sigma()
+    varied_sigma()
