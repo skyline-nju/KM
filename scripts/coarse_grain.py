@@ -36,7 +36,10 @@ def coarse_grain(xs, ys, angles, Lx, Ly, dx=4):
 
 
 if __name__ == "__main__":
-    fname_in = "../data/snap/L1024_1024_r1_v1_T0.1_s0_D0.0000_h0.1_S1000.gsd"
+    folder = "/mnt/sda/active_KM/snap"
+    L = 4096
+    sigma = 0.1
+    fname_in = f"{folder}/L{L:d}_{L:d}_r1_v1_T0.1_s{sigma:g}_D0.0000_h0.1_S3000.gsd"
     dx = 4
 
     with fl.open(name=fname_in, mode="r") as fin:
@@ -56,5 +59,5 @@ if __name__ == "__main__":
             angles = fin.read_chunk(frame=i_frame, name="particles/charge")
             ux[i_frame], uy[i_frame], num[i_frame] = coarse_grain(xs, ys, angles, Lx, Ly, dx)
 
-    fname_out = f"../data/cg_dx{dx:d}/{os.path.basename(fname_in).replace(".gsd", ".npz")}"
+    fname_out = f"{folder}/cg_dx{dx:d}/{os.path.basename(fname_in).replace(".gsd", ".npz")}"
     np.savez_compressed(fname_out, ux=ux, uy=uy, num=num)

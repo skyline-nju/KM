@@ -33,6 +33,35 @@ def duplicate(s, nx: int, ny: int):
     return s2
 
 
+def create_spin_waves(angle, L, rho0=1, n_period=1):
+    # angle <= pi/4
+    s = hoomd.Frame()
+    s.configuration.box = [L, L, 1, 0, 0, 0]
+    N = int(L ** 2 * rho0)
+    s.particles.N = N
+    s.configuration.step = 0
+
+    pos = np.zeros((N, 3), dtype=np.float32)
+    charge = np.zeros(N, dtype=np.float32)
+    mass = np.zeros(N, dtype=np.float32)
+
+    pos[:, 0] = np.random.rand(N) * L
+    pos[:, 1] = np.random.rand(N) * L
+    pos[:, 2] = (np.random.rand(N) - 0.5)  * np.pi * 2
+
+    z = pos[:, 0] + pos[:, 1] * np.tan(angle)
+    z[z>= L] -= L
+    charge = 2 * np.pi * z / L
+    charge[charge >= np.pi] -= 2 * np.pi
+
+    pos[:, 0] -= L / 2
+    pos[:, 1] -= L / 2
+    s.particles.position = pos
+    s.particles.charge = charge
+    s.particles.mass = mass
+    return s
+
+
 def scale(s, nx: int, ny: int, eps=0):
     lx = s.configuration.box[0]
     ly = s.configuration.box[1]
@@ -82,17 +111,18 @@ def scale(s, nx: int, ny: int, eps=0):
 
 
 if __name__ == "__main__":
-    folder = r"../data/finite_PD/L256"
+    folder = r"/mnt/sda/active_KM/finite_PD"
     # folder = "build/data"
-    basename = "L256_256_r1_v1_T0.3_J1.25_s0_D0.0000_h0.1_S111026.gsd"
+    basename = "L512_512_r1_v1_T0.3_J1.25_s0_D0.0000_h0.1_S4030.gsd"
 
     fname_in = f"{folder}/{basename}"
-    with hoomd.open(name=fname_in, mode='r') as fin:
-        print(len(fin))
-        snap = fin[-1]
+    # with hoomd.open(name=fname_in, mode='r') as fin:
+    #     print(len(fin))
+    #     snap = fin[-1]
 
-    fname_out = f"{folder}/L512_512_r1_v1_T0.3_J1.25_s0_D0.0000_h0.1_S221026.gsd"
+    fname_out = fname_in
     with hoomd.open(name=fname_out, mode='w') as fout:
-        snap_new = duplicate(snap, 2, 2)
+        # snap_new = duplicate(snap, 2, 2)
+        snap_new = create_spin_waves(np.pi / 6, 512)
         fout.append(snap_new)
 
