@@ -6,11 +6,14 @@ from add_line import add_line
 
 
 if __name__ == "__main__":
-    Lx = Ly = 4096
+    Lx = Ly = 2880
     dx = 4
     T = 0.1
     sigma = 0.1
     seed = 3000
+    D = 0.
+    beg_frame = 25
+
     n = int(Lx / dx)
     qx = np.fft.fftfreq(n, d=dx/(2 * np.pi))
     qy = np.fft.fftfreq(n, d=dx/(2 * np.pi))
@@ -30,7 +33,7 @@ if __name__ == "__main__":
     radius = x[n//2:]
 
     folder = "/mnt/sda/active_KM/snap"
-    fname_in = f"{folder}/cg_dx{dx}/L{Lx}_{Ly}_r1_v1_T{T:g}_s{sigma:g}_D0.0000_h0.1_S{seed:d}.npz"
+    fname_in = f"{folder}/cg_dx{dx}/L{Lx}_{Ly}_r1_v1_T{T:g}_s{sigma:g}_D{D:.4f}_h0.1_S{seed:d}.npz"
     with np.load(fname_in, "rb") as data:
         ux, uy, num = data["ux"], data["uy"], data["num"]
 
@@ -74,7 +77,6 @@ if __name__ == "__main__":
             # plt.show()
             # plt.close(0)
 
-        beg_frame = 80
         qq = (q_radius[1:] + q_radius[:-1]) / 2
         Sq_u_m = np.mean(Sq_u_t[beg_frame:], axis=0)
 

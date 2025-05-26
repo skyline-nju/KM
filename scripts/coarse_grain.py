@@ -37,9 +37,10 @@ def coarse_grain(xs, ys, angles, Lx, Ly, dx=4):
 
 if __name__ == "__main__":
     folder = "/mnt/sda/active_KM/snap"
-    L = 4096
+    L = 2880
     sigma = 0.1
-    fname_in = f"{folder}/L{L:d}_{L:d}_r1_v1_T0.1_s{sigma:g}_D0.0000_h0.1_S3000.gsd"
+    D_theta = 0.
+    fname_in = f"{folder}/L{L:d}_{L:d}_r1_v1_T0.1_s{sigma:g}_D{D_theta:.4f}_h0.1_S3000.gsd"
     dx = 4
 
     with fl.open(name=fname_in, mode="r") as fin:
