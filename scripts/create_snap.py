@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from gsd import hoomd
+from gsd import hoomd, fl
 import os
 
 
@@ -51,7 +51,10 @@ def create_spin_waves(angle, L, rho0=1, n_period=1):
 
     z = pos[:, 0] + pos[:, 1] * np.tan(angle)
     z[z>= L] -= L
-    charge = 2 * np.pi * z / L
+    charge = n_period * z / L
+    charge = charge - np.floor(charge)
+
+    charge *= np.pi * 2
     charge[charge >= np.pi] -= 2 * np.pi
 
     pos[:, 0] -= L / 2
@@ -59,6 +62,40 @@ def create_spin_waves(angle, L, rho0=1, n_period=1):
     s.particles.position = pos
     s.particles.charge = charge
     s.particles.mass = mass
+    return s
+
+
+def get_snap(fname, i_frame=-1):
+    def read_fl(fname, i_frame):
+        with fl.open(name=fname, mode="r") as f:
+            if i_frame < 0:
+                i_frame += f.nframes
+            s.configuration.box = f.read_chunk(frame=0, name="configuration/box")
+            if f.chunk_exists(frame=i_frame, name="configuration/step"):
+                s.configuration.step = f.read_chunk(frame=i_frame, name="configuration/step")[0]
+                print(s.configuration.step)
+            else:
+                if i_frame == 0:
+                    s.configuration.step = 0
+                else:
+                    print("Error, cannot find step for frame =", i_frame)
+                    sys.exit()
+            s.particles.N = f.read_chunk(frame=i_frame, name="particles/N")[0]
+            s.particles.position = f.read_chunk(frame=i_frame, name="particles/position")
+            s.particles.charge = f.read_chunk(frame=i_frame, name="particles/charge")
+            s.particles.mass = f.read_chunk(frame=i_frame, name="particles/mass")    
+            return s
+
+    s = hoomd.Frame()
+    with hoomd.open(name=fname_in, mode='r') as fin:
+        try:
+            nframes = len(fin)
+            if i_frame < 0:
+                i_frame == nframes
+            s = fin[i_frame]
+        except IndexError:
+            print("Failed to open", fname, "in the hoomd mode")
+            s = read_fl(fname, i_frame)
     return s
 
 
@@ -77,7 +114,10 @@ def create_spin_waves_along_y(Lx, Ly, rho0=1, n_period=1):
     pos[:, 1] = np.random.rand(N) * Ly
     pos[:, 2] = (np.random.rand(N) - 0.5)  * np.pi * 2
 
-    charge = 2 * np.pi * pos[:, 1] / Ly
+    charge = n_period *  pos[:, 1] / Ly
+    charge = charge - np.floor(charge)
+
+    charge *= np.pi * 2
     charge[charge >= np.pi] -= 2 * np.pi
 
     pos[:, 0] -= Lx / 2
@@ -137,18 +177,19 @@ def scale(s, nx: int, ny: int, eps=0):
 
 
 if __name__ == "__main__":
-    folder = r"/mnt/sda/active_KM/finite_PD"
+    folder = r"/mnt/sda/active_KM/snap"
     # folder = "build/data"
-    basename = "L1024_128_r2.5_v0_T0.1_J2.5_s0_D0.0000_h0.1_S2000.gsd"
+    basename = "L2048_2048_r1_v1_T0.1_s0.1_D0.1000_h0.1_S3000.gsd"
 
     fname_in = f"{folder}/{basename}"
-    # with hoomd.open(name=fname_in, mode='r') as fin:
-    #     print(len(fin))
-    #     snap = fin[-1]
 
-    fname_out = fname_in
+    snap = get_snap(fname_in, 81)
+
+    fname_out = f"{folder}/L2048_2048_r1_v1_T0.1_s0.1_D0.1000_h0.1_S2082.gsd"
     with hoomd.open(name=fname_out, mode='w') as fout:
         # snap_new = duplicate(snap, 2, 2)
-        snap_new = create_spin_waves_along_y(1024, 128, 2.5)
-        fout.append(snap_new)
+        # snap_new = create_spin_waves_along_y(2048, 128, 2.5)
+        # snap_new = create_spin_waves(0, 128, 2.5, 2)
+        snap.configuration.step = 0
+        fout.append(snap)
 
