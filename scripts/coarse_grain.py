@@ -35,6 +35,50 @@ def coarse_grain(xs, ys, angles, Lx, Ly, dx=4):
     return ux, uy, num
 
 
+'''
+show the x-component of global polarity
+'''
+def plot_polarity_x():
+    fig, ax = plt.subplots(1, 1, constrained_layout=True)
+    fname = r"D:\tmp\L128_128_r2.5_v1_T0.1_J1_s0_D0.0000_h0.1_S2001.gsd"
+    with fl.open(name=fname, mode="r") as fin:
+        nframes = fin.nframes
+        box = fin.read_chunk(frame=0, name="configuration/box")
+        Lx, Ly = int(box[0]), int(box[1])
+
+        px = np.zeros(nframes)
+        for i_frame in range(nframes):
+            pos = fin.read_chunk(frame=i_frame, name="particles/position")
+            theta = pos[:, 2]
+            px[i_frame] = np.mean(np.cos(theta))
+        
+    
+    t = np.arange(nframes) * 1000
+    ax.plot(t, px, label=r"$D_\psi=0$")
+
+    fname = r"D:\tmp\L128_128_r2.5_v1_T0.1_J1_s0_D0.1000_h0.1_S2001.gsd"
+    with fl.open(name=fname, mode="r") as fin:
+        nframes = fin.nframes
+        box = fin.read_chunk(frame=0, name="configuration/box")
+        Lx, Ly = int(box[0]), int(box[1])
+
+        px = np.zeros(nframes)
+        for i_frame in range(nframes):
+            pos = fin.read_chunk(frame=i_frame, name="particles/position")
+            theta = pos[:, 2]
+            px[i_frame] = np.mean(np.cos(theta))
+        
+    
+    t = np.arange(nframes) * 1000
+    ax.plot(t, px, label=r"$D_\psi=0.1$")
+
+    ax.set_xlabel(r"$t$", fontsize="xx-large")
+    ax.set_ylabel(r"$\langle \cos(\psi_i^t)\rangle_i $", fontsize="xx-large")
+    ax.set_xlim(0, 6e5)
+    ax.legend(fontsize="xx-large")
+    plt.show()
+    plt.close()
+
 if __name__ == "__main__":
     folder = "/mnt/sda/active_KM/snap"
     L = 2880

@@ -13,6 +13,7 @@ void tangle_1D(T& x, T L) {
   }
 }
 
+
 class ActiveOscillator_2 {
 public:
   ActiveOscillator_2() : pos(), theta(), psi() {}

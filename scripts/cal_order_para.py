@@ -191,8 +191,8 @@ if __name__ == "__main__":
     rho0 = 1
     D_psi = 0.1  # temperature for spins
     sigma = 0.1
-    L = 4096
-    D_theta = 0.
+    L = 2048
+    D_theta = 0.1
     seed = 3000
     t_arr, phi_arr, theta_arr = read_op_series(L, rho0, D_psi, sigma, D_theta, seed=seed, ret_theta=True)
 
