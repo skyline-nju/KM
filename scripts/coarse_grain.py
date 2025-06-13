@@ -81,10 +81,12 @@ def plot_polarity_x():
 
 if __name__ == "__main__":
     folder = "/mnt/sda/active_KM/snap"
-    L = 2880
-    sigma = 0.1
+    L = 4096
+    sigma = 0.
     D_theta = 0.
-    fname_in = f"{folder}/L{L:d}_{L:d}_r1_v1_T0.1_s{sigma:g}_D{D_theta:.4f}_h0.1_S3000.gsd"
+    T = 0.1
+    seed = 1000
+    fname_in = f"{folder}/L{L:d}_{L:d}_r1_v1_T{T:g}_s{sigma:g}_D{D_theta:.4f}_h0.1_S{seed:d}.gsd"
     dx = 4
 
     with fl.open(name=fname_in, mode="r") as fin:
