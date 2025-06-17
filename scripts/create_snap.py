@@ -91,7 +91,7 @@ def get_snap(fname, i_frame=-1):
         try:
             nframes = len(fin)
             if i_frame < 0:
-                i_frame == nframes
+                i_frame += nframes
             s = fin[i_frame]
         except IndexError:
             print("Failed to open", fname, "in the hoomd mode")

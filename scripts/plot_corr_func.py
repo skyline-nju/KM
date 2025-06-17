@@ -130,17 +130,18 @@ def varied_D():
     plt.close()
 
 
-def corr_u_vs_corr_theta(sigma=0.1):
+def corr_u_vs_corr_theta():
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 5), constrained_layout=True)
 
-    sigma = 0.1
-    L = 2880 * 2
-    D = 0
+    T = 0.1
+    sigma = 0.
+    L = 2048
+    D = 0.
     # L = 4096
-    seed = 3000
+    seed = 1000
     folders = ["/mnt/sda/active_KM/snap/corr_func", "/mnt/sda/active_KM/snap/corr_func/untangled"]
     for folder in folders:
-        with np.load(f"{folder}/L{L:d}_{L:d}_r1_v1_T0.1_s{sigma:g}_D{D:.4f}_h0.1_S{seed}.npz") as data:
+        with np.load(f"{folder}/L{L:d}_{L:d}_r1_v1_T{T:g}_s{sigma:g}_D{D:.4f}_h0.1_S{seed}.npz") as data:
             q, Sq, r, Cr = data["q"], data["Sq"], data["r"], data["Cr"]
         print(q)
         ax1.plot(q, Sq, "-o")
@@ -187,7 +188,7 @@ def varied_D_two_corr():
         for i, folder in enumerate(folders):
             with np.load(f"{folder}/L{L:d}_{L:d}_r1_v1_T0.1_s{sigma:g}_D{D:.4f}_h0.1_S{seed}.npz") as data:
                 q, Sq, r, Cr = data["q"], data["Sq"], data["r"], data["Cr"]
-            axes[i].plot(q, Sq, label=r"$D_r=%g$" % D)
+            axes[i].plot(q, Sq, label=r"$D_\psi=%g$" % D)
 
         ax1.set_xlabel(r"$k$", fontsize="x-large")
         ax2.set_xlabel(r"$k$", fontsize="x-large")
@@ -213,12 +214,12 @@ def varied_D_two_corr():
 
 
 def varied_L_two_corr():
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True, sharex=True, sharey=True)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5.5), constrained_layout=True, sharex=True, sharey=True)
 
-    sigma = 0.
-    D = 0
-    seed = 1000
-    L_arr = [2048]
+    sigma = 0.1
+    D = 0.1
+    seed = 3000
+    L_arr = [2048, 2880, 4096]
     for L in L_arr:
     # L = 4096
         folders = ["/mnt/sda/active_KM/snap/corr_func", "/mnt/sda/active_KM/snap/corr_func/untangled"]
@@ -239,16 +240,55 @@ def varied_L_two_corr():
         # ax1.set_xlim(0.001)
         # ax1.set_ylim(1)
         # ax1.legend(fontsize="x-large")
-        fig.suptitle(r"$T=0.1, \sigma=%g, D_r=%g$" % (sigma, D), fontsize="xx-large")
+        fig.suptitle(r"$T=0.1, \sigma=%g, D_\psi=%g$" % (sigma, D), fontsize="xx-large")
         # ax2.set_xlim(5)
     ax1.legend(fontsize="large")
     add_line(ax1, 0, 1, 1, -2, label=r"$-2$", yl=0.7)
     add_line(ax1, 0, 1, 1, -4, label=r"$-4$", yl=0.6)
     add_line(ax2, 0, 1, 1, -2, label=r"$-2$", yl=0.8)
     add_line(ax2, 0, 1, 1, -4, label=r"$-4$", yl=0.4)
-    add_line(ax2, 0, 0.94, 1, -3, label=r"$-3$", yl=0.15, xl=0.6)
+    # add_line(ax2, 0, 0.96, 1, -3, label=r"$-3$", yl=0.15, xl=0.6)
     plt.show()
     plt.close()
+
+
+def varied_sigma_two_corr():
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5.5), constrained_layout=True, sharex=True, sharey=True)
+
+    L = 2048
+    D = 0.
+    seed_arr = [1000, 3000, 3000]
+    sigma_arr = [0, 0.05, 0.1]
+    for j, sigma in enumerate(sigma_arr):
+        folders = ["/mnt/sda/active_KM/snap/corr_func", "/mnt/sda/active_KM/snap/corr_func/untangled"]
+        axes = [ax1, ax2]
+        for i, folder in enumerate(folders):
+            with np.load(f"{folder}/L{L:d}_{L:d}_r1_v1_T0.1_s{sigma:g}_D{D:.4f}_h0.1_S{seed_arr[j]}.npz") as data:
+                q, Sq, r, Cr = data["q"], data["Sq"], data["r"], data["Cr"]
+            axes[i].plot(q, Sq,"-o", label=r"$\sigma=%g$" % sigma, fillstyle="none", ms=3)
+
+        ax1.set_xlabel(r"$k$", fontsize="x-large")
+        ax2.set_xlabel(r"$k$", fontsize="x-large")
+        ax1.set_ylabel(r"$\langle |\tilde{\mathbf{u}}(\mathbf{k})|^2\rangle$", fontsize="x-large")
+        ax2.set_ylabel(r"$\langle |\tilde{\theta} (\mathbf{k})|^2\rangle$", fontsize="x-large")
+        ax1.set_xscale("log")
+        ax1.set_yscale("log")
+        ax2.set_xscale("log")
+        ax2.set_yscale("log")
+        # ax1.set_xlim(0.001)
+        # ax1.set_ylim(1)
+        # ax1.legend(fontsize="x-large")
+        fig.suptitle(r"$T=0.1, L=%g, D_\psi=%g$" % (L, D), fontsize="xx-large")
+        # ax2.set_xlim(5)
+    ax1.legend(fontsize="large")
+    add_line(ax1, 0, 1, 1, -2, label=r"$-2$", yl=0.7)
+    add_line(ax1, 0, 1, 1, -4, label=r"$-4$", yl=0.6)
+    add_line(ax2, 0, 1, 1, -2, label=r"$-2$", yl=0.8)
+    add_line(ax2, 0, 1, 1, -4, label=r"$-4$", yl=0.4)
+    # add_line(ax2, 0, 0.96, 1, -3, label=r"$-3$", yl=0.15, xl=0.6)
+    plt.show()
+    plt.close()
+
 
 if __name__ == "__main__":
     # varied_L(sigma=0.1, D=0.1, mode="theta")
@@ -256,5 +296,6 @@ if __name__ == "__main__":
 
     # varied_D()
     # corr_u_vs_corr_theta()
-    varied_L_two_corr()
-
+    # varied_L_two_corr()
+    # varied_D_two_corr()
+    varied_sigma_two_corr()

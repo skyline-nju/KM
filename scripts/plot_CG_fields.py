@@ -53,36 +53,16 @@ def get_untangled_angles(ux, uy, sigma=0):
     return theta_untangled
 
 
-if __name__ == "__main__":
+def show_untangled_theta():
     folder = "/mnt/sda/active_KM/snap/cg_dx4"
-
-    # L = 2880
-    # rho0 = 1
-    # v0 = 1
-    # T = 0.1
-    # sigma = 0.1
-    # D = 0.1
-    # h = 0.1
-    # seed = 3000
-
     L = 4096
     rho0 = 1
     v0 = 1
     T = 0.1
     sigma = 0.1
-    D = 0.
+    D = 0.1
     h = 0.1
     seed = 3000
-
-    # L = 1024
-    # rho0 = 1
-    # v0 = 1
-    # T = 0.53
-    # sigma = 0.
-    # D = 0.
-    # h = 0.1
-    # seed = 1000
-
     fname = f"{folder}/L{L:d}_{L:d}_r{rho0:g}_v{v0:g}_T{T:g}_s{sigma:g}_D{D:.4f}_h{h:g}_S{seed}.npz"
 
     with np.load(fname, "r") as data:
@@ -90,7 +70,7 @@ if __name__ == "__main__":
     
         nframes, nrows, ncols = ux.shape
 
-        beg_frame = 50
+        beg_frame = 40
 
         for i_frame in range(beg_frame, nframes):
             theta = np.arctan2(uy[i_frame], ux[i_frame])
@@ -103,30 +83,52 @@ if __name__ == "__main__":
             ax2.imshow(theta_new, origin="lower", cmap="hsv")
             plt.show()
             plt.close()
-
-            # x = (np.arange(ncols) + 0.5) * 4
-            # plt.plot(x, theta_new[10], "-o")
-            # theta_untangled = untangle_1D(theta_new[10])        
-            # plt.plot(x, theta_untangled)
-            # plt.show()
-            # plt.close()
-
-
-            # plt.plot(x, theta_new[:, 0], "-o")
-            # theta_untangled = untangle_1D(theta_new[:, 0])
-
-            # plt.plot(x, theta_untangled)
-            # plt.show()
-            # plt.close()
-
-            # theta_untangled_along_x = np.zeros_like(theta_new)
-            # for row in range(nrows):
-            #     theta_untangled_along_x[row] = untangle_1D(theta_new[row])
             theta_untangled = untangle_2D(theta)
             verify_untangled_angles(theta_untangled)
             
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
-            ax1.imshow(theta, origin="lower", cmap="hsv")
-            ax2.imshow(theta_untangled, origin="lower")
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6.8), constrained_layout=True)
+            extent = [0, L, 0, L]
+            im1 = ax1.imshow(theta, origin="lower", cmap="hsv", extent=extent)
+            im2 = ax2.imshow(theta_untangled, origin="lower", extent=extent)
+            cb1 = fig.colorbar(im1, ax=ax1, orientation="horizontal")
+            cb2 = fig.colorbar(im2, ax=ax2, orientation="horizontal")
+            cb1.set_label(r"$\theta(\mathbf{r})$", fontsize="xx-large")
+            cb2.set_label(r"Unwrapped $\theta(\mathbf{r})$", fontsize="xx-large")
             plt.show()
             plt.close()
+
+
+def show_coarse_grained_theta():
+    folder = "/mnt/sda/active_KM/snap/cg_dx4"
+    L = 1024
+    rho0 = 1
+    v0 = 1
+    T = 0.5
+    sigma = 0.
+    D = 0.
+    h = 0.1
+    seed = 1000
+    fname = f"{folder}/L{L:d}_{L:d}_r{rho0:g}_v{v0:g}_T{T:g}_s{sigma:g}_D{D:.4f}_h{h:g}_S{seed}.npz"
+
+    with np.load(fname, "r") as data:
+        ux, uy, num = data["ux"], data["uy"], data["num"]
+    
+        nframes, nrows, ncols = ux.shape
+
+        beg_frame = 1550
+
+        for i_frame in range(beg_frame, nframes):
+            theta = np.arctan2(uy[i_frame], ux[i_frame])
+            ux_new = gaussian_filter(ux[i_frame], sigma=3, mode="wrap")
+            uy_new = gaussian_filter(uy[i_frame], sigma=3, mode="wrap")
+            theta_new = np.arctan2(uy_new, ux_new)
+
+            fig, ax = plt.subplots(1, 1, figsize=(5, 5), constrained_layout=True)
+            ax.imshow(theta_new, origin="lower", cmap="hsv", extent=[0, L, 0, L])
+            ax.set_title(r"$T=%g$" % T, fontsize="xx-large")
+            plt.show()
+            plt.close()
+
+if __name__ == "__main__":
+    # show_untangled_theta()
+    show_coarse_grained_theta()

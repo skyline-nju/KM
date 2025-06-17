@@ -6,15 +6,7 @@ from add_line import add_line
 from plot_CG_fields import get_untangled_angles
 
 
-def cal_corr_u():
-    Lx = Ly = 2880
-    dx = 4
-    T = 0.1
-    sigma = 0.1
-    seed = 3000
-    D = 0
-    beg_frame = 50
-
+def cal_corr_u(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4):
     n = int(Lx / dx)
     qx = np.fft.fftfreq(n, d=dx/(2 * np.pi))
     qy = np.fft.fftfreq(n, d=dx/(2 * np.pi))
@@ -84,23 +76,7 @@ def cal_corr_u():
         np.savez_compressed(fname_out, q=q_radius, Sq=Sq_u_m, r=rr, Cr=Cr_u_m)
 
 
-def cal_corr_theta():
-    Lx = Ly = 2880
-    dx = 4
-    T = 0.1
-    sigma = 0.1
-    seed = 3000
-    D = 0
-    beg_frame = 50
-    # if Lx == 2880 * 2:
-    #     beg_frame = 45
-    # elif Lx == 4096:
-    #     beg_frame = 60
-    # elif Lx == 2880:
-    #     beg_frame = 45
-    # else:
-    #     beg_frame = 100
-
+def cal_corr_theta(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4):
     n = int(Lx / dx)
     qx = np.fft.fftfreq(n, d=dx/(2 * np.pi))
     qy = np.fft.fftfreq(n, d=dx/(2 * np.pi))
@@ -169,5 +145,12 @@ def cal_corr_theta():
 
 
 if __name__ == "__main__":
-    cal_corr_theta()
-    cal_corr_u()
+    Lx = Ly = 2048
+    T = 0.1
+    sigma = 0.05
+    D = 0.
+    seed = 3000
+    beg_frame = 100
+    dx = 4
+    cal_corr_theta(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4)
+    cal_corr_u(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4)
