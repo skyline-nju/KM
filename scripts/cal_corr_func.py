@@ -6,7 +6,7 @@ from add_line import add_line
 from plot_CG_fields import get_untangled_angles
 
 
-def cal_corr_u(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4):
+def cal_corr_u(Lx, Ly, T, sigma, D, seed, beg_frame, end_frame=None, dx=4):
     n = int(Lx / dx)
     qx = np.fft.fftfreq(n, d=dx/(2 * np.pi))
     qy = np.fft.fftfreq(n, d=dx/(2 * np.pi))
@@ -44,7 +44,7 @@ def cal_corr_u(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4):
         
             Sq_u = ux_q * ux_q.conj() + uy_q * uy_q.conj()
 
-            C_u = np.fft.ifft2(Sq_u)
+            C_u = np.fft.ifft2(Sq_u, norm="ortho")
 
             Sq_u = np.fft.fftshift(Sq_u).real
             C_u = np.fft.ifftshift(C_u).real
@@ -64,10 +64,10 @@ def cal_corr_u(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4):
             Sq_u_t[i_frame] = Sq_u_radius
             Cr_u_t[i_frame] = Cr_u_radius
 
-        Sq_u_m = np.mean(Sq_u_t[beg_frame:], axis=0)
+        Sq_u_m = np.mean(Sq_u_t[beg_frame:end_frame], axis=0)
 
         rr = (radius[1:] + radius[:-1]) / 2
-        Cr_u_m = np.mean(Cr_u_t[beg_frame:], axis=0)
+        Cr_u_m = np.mean(Cr_u_t[beg_frame:end_frame], axis=0)
 
 
         basename = os.path.basename(fname_in)
@@ -76,7 +76,7 @@ def cal_corr_u(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4):
         np.savez_compressed(fname_out, q=q_radius, Sq=Sq_u_m, r=rr, Cr=Cr_u_m)
 
 
-def cal_corr_theta(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4):
+def cal_corr_theta(Lx, Ly, T, sigma, D, seed, beg_frame, end_frame=None, dx=4):
     n = int(Lx / dx)
     qx = np.fft.fftfreq(n, d=dx/(2 * np.pi))
     qy = np.fft.fftfreq(n, d=dx/(2 * np.pi))
@@ -97,28 +97,41 @@ def cal_corr_theta(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4):
     folder = "/mnt/sda/active_KM/snap"
     fname_in = f"{folder}/cg_dx{dx}/L{Lx}_{Ly}_r1_v1_T{T:g}_s{sigma:g}_D{D:.4f}_h0.1_S{seed:d}.npz"
     with np.load(fname_in, "rb") as data:
-        ux, uy, num = data["ux"][beg_frame:], data["uy"][beg_frame:], data["num"][beg_frame:]
+        ux, uy, num = data["ux"][beg_frame:end_frame], data["uy"][beg_frame:end_frame], data["num"][beg_frame:end_frame]
 
         nframes = ux.shape[0]
+        print("find", nframes + beg_frame, "frames")
         Sq_theta_t = np.zeros((nframes, q_radius.size))
         Cr_theta_t = np.zeros((nframes, radius.size - 1))
+        G_theta_t = np.zeros_like(Cr_theta_t)
+        Cr_theta_t_raw = np.zeros_like(Cr_theta_t)
 
         for i_frame in range(nframes):
+            print(i_frame, nframes)
             theta = get_untangled_angles(ux[i_frame], uy[i_frame])
-            # theta -= np.mean(theta)
+            theta_mean = np.mean(theta)
+            print("theta in (%g, %g) with mean = %g" % (theta.min(), theta.max(), theta_mean))
+            theta_q = np.fft.fft2(theta, norm="ortho")
+            Sq_theta = theta_q * theta_q.conj()
+            C_theta_raw = np.fft.ifft2(Sq_theta, norm="ortho")
+            C_theta_raw = np.fft.ifftshift(C_theta_raw).real
+
+            theta -= theta_mean
             theta_q = np.fft.fft2(theta, norm="ortho")
         
             Sq_theta = theta_q * theta_q.conj()
-
             Sq_theta_prime = Sq_theta.copy()
-            # Sq_theta_prime[0, 0] = 0.
-            C_theta = np.fft.ifft2(Sq_theta_prime)
+            C_theta = np.fft.ifft2(Sq_theta_prime, norm="ortho")
+            G_theta = C_theta[0, 0] - C_theta
 
             Sq_theta = np.fft.fftshift(Sq_theta).real
             C_theta = np.fft.ifftshift(C_theta).real
+            G_theta = np.fft.ifftshift(G_theta).real
 
             Sq_theta_radius = np.zeros(q_radius.size)
             Cr_theta_radius = np.zeros(radius.size - 1)
+            G_theta_radius = np.zeros_like(Cr_theta_radius)
+            C_theta_raw_radius = np.zeros_like(Cr_theta_radius)
 
             for j in range(Sq_theta_radius.size):
                 mask = np.logical_and(q_module > q_radius[j]-dq/2, q_module <= q_radius[j]+dq/2)
@@ -127,30 +140,35 @@ def cal_corr_theta(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4):
             for j in range(radius.size - 1):
                 mask = np.logical_and(r_module >= radius[j], r_module < radius[j+1])
                 Cr_theta_radius[j] = np.mean(C_theta[mask])
+                G_theta_radius[j] = np.mean(G_theta[mask])
+                C_theta_raw_radius[j] = np.mean(C_theta_raw[mask])
 
             Sq_theta_t[i_frame] = Sq_theta_radius
             Cr_theta_t[i_frame] = Cr_theta_radius
-
+            G_theta_t[i_frame] = G_theta_radius
+            Cr_theta_t_raw[i_frame] = C_theta_raw_radius
         Sq_theta_m = np.mean(Sq_theta_t, axis=0)
 
         rr = (radius[1:] + radius[:-1]) / 2
         Cr_theta_m = np.mean(Cr_theta_t, axis=0)
-
+        G_theta_m = np.mean(G_theta_t, axis=0)
+        Cr_theta_raw_m = np.mean(Cr_theta_t_raw, axis=0)
 
         basename = os.path.basename(fname_in)
         fname_out = f"{folder}/corr_func/untangled/{basename}"
 
-        np.savez_compressed(fname_out, q=q_radius, Sq=Sq_theta_m, r=rr, Cr=Cr_theta_m)
+        np.savez_compressed(fname_out, q=q_radius, Sq=Sq_theta_m, r=rr, Cr=Cr_theta_m, Gr=G_theta_m, Cr_raw=Cr_theta_raw_m)
 
 
 
 if __name__ == "__main__":
-    Lx = Ly = 2048
+    Lx = Ly = 1024
     T = 0.1
-    sigma = 0.05
-    D = 0.
+    sigma = 0.1
+    D = 0.1
     seed = 3000
-    beg_frame = 100
+    beg_frame = 25
+    end_frame = None
     dx = 4
-    cal_corr_theta(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4)
-    cal_corr_u(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4)
+    cal_corr_theta(Lx, Ly, T, sigma, D, seed, beg_frame, end_frame, dx=4)
+    # cal_corr_u(Lx, Ly, T, sigma, D, seed, beg_frame, dx=4)

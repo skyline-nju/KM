@@ -70,7 +70,7 @@ def show_untangled_theta():
     
         nframes, nrows, ncols = ux.shape
 
-        beg_frame = 40
+        beg_frame = 190
 
         for i_frame in range(beg_frame, nframes):
             theta = np.arctan2(uy[i_frame], ux[i_frame])
@@ -100,14 +100,14 @@ def show_untangled_theta():
 
 def show_coarse_grained_theta():
     folder = "/mnt/sda/active_KM/snap/cg_dx4"
-    L = 1024
+    L = 4096
     rho0 = 1
     v0 = 1
-    T = 0.5
-    sigma = 0.
-    D = 0.
+    T = 0.1
+    sigma = 0.1
+    D = 0.1
     h = 0.1
-    seed = 1000
+    seed = 3000
     fname = f"{folder}/L{L:d}_{L:d}_r{rho0:g}_v{v0:g}_T{T:g}_s{sigma:g}_D{D:.4f}_h{h:g}_S{seed}.npz"
 
     with np.load(fname, "r") as data:
@@ -115,7 +115,7 @@ def show_coarse_grained_theta():
     
         nframes, nrows, ncols = ux.shape
 
-        beg_frame = 1550
+        beg_frame = 0
 
         for i_frame in range(beg_frame, nframes):
             theta = np.arctan2(uy[i_frame], ux[i_frame])
@@ -130,5 +130,5 @@ def show_coarse_grained_theta():
             plt.close()
 
 if __name__ == "__main__":
-    # show_untangled_theta()
-    show_coarse_grained_theta()
+    show_untangled_theta()
+    # show_coarse_grained_theta()
