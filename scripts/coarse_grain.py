@@ -79,16 +79,16 @@ def plot_polarity_x():
     plt.show()
     plt.close()
 
-if __name__ == "__main__":
-    folder = "/mnt/sda/active_KM/snap"
-    L = 1024
-    sigma = 0.1
-    D_theta = 0.1
-    T = 0.1
-    seed = 3000
-    fname_in = f"{folder}/L{L:d}_{L:d}_r1_v1_T{T:g}_s{sigma:g}_D{D_theta:.4f}_h0.1_S{seed:d}.gsd"
-    dx = 4
 
+def get_coarse_grained_snaps(L, sigma, D_theta, T=0.1, seed=3000, dx=4, folder="/mnt/sda/active_KM/snap"):
+    fname_in = f"{folder}/L{L:d}_{L:d}_r1_v1_T{T:g}_s{sigma:g}_D{D_theta:.4f}_h0.1_S{seed:d}.gsd"
+    fname_out = f"{folder}/cg_dx{dx:d}/{os.path.basename(fname_in).replace(".gsd", ".npz")}"
+
+    if os.path.exists(fname_out):
+        with np.load(fname_out, "r") as data:
+            ux0, uy0, num0 = data["ux"], data["uy"], data["num"]
+    else:
+        ux0, uy0, num0 = None, None, None
     with fl.open(name=fname_in, mode="r") as fin:
         nframes = fin.nframes
         box = fin.read_chunk(frame=0, name="configuration/box")
@@ -99,12 +99,32 @@ if __name__ == "__main__":
         uy = np.zeros((nframes, nrows, ncols), np.float32)
         num = np.zeros((nframes, nrows, ncols), np.int32)
         
-        for i_frame in range(nframes):
-            print("frame, %d/%d" % (i_frame, nframes))
-            pos = fin.read_chunk(frame=i_frame, name="particles/position")
-            xs, ys = pos[:, 0], pos[0:, 1]
-            angles = fin.read_chunk(frame=i_frame, name="particles/charge")
-            ux[i_frame], uy[i_frame], num[i_frame] = coarse_grain(xs, ys, angles, Lx, Ly, dx)
+        if ux0 is not None:
+            n_existed = ux0.shape[0]
+            ux[:n_existed] = ux0
+            uy[:n_existed] = uy0
+            num[:n_existed] = num0
+        else:
+            n_existed = 0
+        if n_existed < nframes:
+            for i_frame in range(n_existed, nframes):
+                print("frame, %d/%d" % (i_frame, nframes))
+                pos = fin.read_chunk(frame=i_frame, name="particles/position")
+                xs, ys = pos[:, 0], pos[0:, 1]
+                angles = fin.read_chunk(frame=i_frame, name="particles/charge")
+                ux[i_frame], uy[i_frame], num[i_frame] = coarse_grain(xs, ys, angles, Lx, Ly, dx)
 
-    fname_out = f"{folder}/cg_dx{dx:d}/{os.path.basename(fname_in).replace(".gsd", ".npz")}"
-    np.savez_compressed(fname_out, ux=ux, uy=uy, num=num)
+            np.savez_compressed(fname_out, ux=ux, uy=uy, num=num)
+        else:
+            print(fname_out, "is up to date")
+
+
+if __name__ == "__main__":
+    folder = "/mnt/sda/active_KM/snap"
+    L = 2048
+    sigma = 0.12
+    D_theta = 0.1
+    T = 0.1
+    seed = 3000
+    dx = 4
+    get_coarse_grained_snaps(L, sigma, D_theta, T, seed, dx, folder)    

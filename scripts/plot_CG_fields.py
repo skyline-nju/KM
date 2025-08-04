@@ -55,11 +55,11 @@ def get_untangled_angles(ux, uy, sigma=0):
 
 def show_untangled_theta():
     folder = "/mnt/sda/active_KM/snap/cg_dx4"
-    L = 4096
+    L = 2048
     rho0 = 1
     v0 = 1
     T = 0.1
-    sigma = 0.1
+    sigma = 0.12
     D = 0.1
     h = 0.1
     seed = 3000
@@ -70,21 +70,22 @@ def show_untangled_theta():
     
         nframes, nrows, ncols = ux.shape
 
-        beg_frame = 190
+        beg_frame = 200
 
         for i_frame in range(beg_frame, nframes):
+            print(i_frame)
             theta = np.arctan2(uy[i_frame], ux[i_frame])
             ux_new = gaussian_filter(ux[i_frame], sigma=3, mode="wrap")
             uy_new = gaussian_filter(uy[i_frame], sigma=3, mode="wrap")
             theta_new = np.arctan2(uy_new, ux_new)
 
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
-            ax1.imshow(theta, origin="lower", cmap="hsv")
-            ax2.imshow(theta_new, origin="lower", cmap="hsv")
-            plt.show()
-            plt.close()
+            # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
+            # ax1.imshow(theta, origin="lower", cmap="hsv")
+            # ax2.imshow(theta_new, origin="lower", cmap="hsv")
+            # plt.show()
+            # plt.close()
             theta_untangled = untangle_2D(theta)
-            verify_untangled_angles(theta_untangled)
+            # verify_untangled_angles(theta_untangled)
             
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6.8), constrained_layout=True)
             extent = [0, L, 0, L]
@@ -100,10 +101,10 @@ def show_untangled_theta():
 
 def show_coarse_grained_theta():
     folder = "/mnt/sda/active_KM/snap/cg_dx4"
-    L = 4096
+    L = 2048
     rho0 = 1
     v0 = 1
-    T = 0.1
+    T = 0.12
     sigma = 0.1
     D = 0.1
     h = 0.1
