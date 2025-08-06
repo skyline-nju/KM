@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import sys
+import glob
 from gsd import fl
 import matplotlib.pyplot as plt
 
@@ -80,51 +82,85 @@ def plot_polarity_x():
     plt.close()
 
 
-def get_coarse_grained_snaps(L, sigma, D_theta, T=0.1, seed=3000, dx=4, folder="/mnt/sda/active_KM/snap"):
-    fname_in = f"{folder}/L{L:d}_{L:d}_r1_v1_T{T:g}_s{sigma:g}_D{D_theta:.4f}_h0.1_S{seed:d}.gsd"
+def get_para(fname, suffix=".gsd"):
+    basename = os.path.basename(fname)
+    s = basename.rstrip(suffix).split("_")
+    para = {}
+    if len(s) == 9:
+        para["Lx"] = int(s[0].lstrip("L"))
+        para["Ly"] = int(s[1])
+        para["rho0"] = float(s[2].lstrip("r"))
+        para["v0"] = float(s[3].lstrip("v"))
+        para["T"] = float(s[4].lstrip("T"))
+        para["sigma"] = float(s[5].lstrip("s"))
+        para["D_theta"] = float(s[6].lstrip("D"))
+        para["h"] = float(s[7].lstrip("h"))
+        para["seed"] = int(s[8].lstrip("S"))
+    else:
+        print("length of para string=", len(s))
+        sys.exit(1)
+    return para
+
+
+def get_coarse_grained_snaps(fname_in=None, para=None, dx=4, folder="/mnt/sda/active_KM/snap"):
+    if fname_in is not None:
+        para = get_para(fname_in)
+    else:
+        fname_in = f"{folder}/L%d_%d_r%g_v%g_T%g_s%g_D%.4f_h%g_S%d.gsd" % (
+            para["Lx"], para["Ly"], para["rho0"], para["v0"], para["T"], para["sigma"], para["D_theta"],
+            para["h"], para["seed"]
+        )
     fname_out = f"{folder}/cg_dx{dx:d}/{os.path.basename(fname_in).replace(".gsd", ".npz")}"
 
     if os.path.exists(fname_out):
         with np.load(fname_out, "r") as data:
-            ux0, uy0, num0 = data["ux"], data["uy"], data["num"]
+            ux0, uy0, num0, t0 = data["ux"], data["uy"], data["num"], data["t"]
     else:
-        ux0, uy0, num0 = None, None, None
+        ux0, uy0, num0, t0 = None, None, None, None
     with fl.open(name=fname_in, mode="r") as fin:
         nframes = fin.nframes
-        box = fin.read_chunk(frame=0, name="configuration/box")
-        Lx, Ly = int(box[0]), int(box[1])
 
-        nrows, ncols = Ly // dx, Lx // dx
+        nrows, ncols = para["Ly"] // dx, para["Lx"] // dx
         ux = np.zeros((nframes, nrows, ncols), np.float32)
         uy = np.zeros((nframes, nrows, ncols), np.float32)
         num = np.zeros((nframes, nrows, ncols), np.int32)
+        t = np.zeros(nframes)
         
         if ux0 is not None:
             n_existed = ux0.shape[0]
             ux[:n_existed] = ux0
             uy[:n_existed] = uy0
             num[:n_existed] = num0
+            t[:n_existed] = t0
         else:
             n_existed = 0
         if n_existed < nframes:
             for i_frame in range(n_existed, nframes):
                 print("frame, %d/%d" % (i_frame, nframes))
                 pos = fin.read_chunk(frame=i_frame, name="particles/position")
+                t[i_frame] = fin.read_chunk(frame=i_frame, name="configuration/step")[0] * para["h"]
                 xs, ys = pos[:, 0], pos[0:, 1]
                 angles = fin.read_chunk(frame=i_frame, name="particles/charge")
-                ux[i_frame], uy[i_frame], num[i_frame] = coarse_grain(xs, ys, angles, Lx, Ly, dx)
-
-            np.savez_compressed(fname_out, ux=ux, uy=uy, num=num)
+                ux[i_frame], uy[i_frame], num[i_frame] = coarse_grain(xs, ys, angles, para["Lx"], para["Ly"], dx)
+            np.savez_compressed(fname_out, t=t, ux=ux, uy=uy, num=num)
         else:
             print(fname_out, "is up to date")
 
 
-if __name__ == "__main__":
+def update_coarse_grained_fields(Lx, Ly=None, dx=4):
+    if Ly is None:
+        Ly = Lx
     folder = "/mnt/sda/active_KM/snap"
-    L = 2048
-    sigma = 0.12
-    D_theta = 0.1
-    T = 0.1
-    seed = 3000
-    dx = 4
-    get_coarse_grained_snaps(L, sigma, D_theta, T, seed, dx, folder)    
+    pat = f"{folder}/L{Lx:g}_{Ly:g}_*.gsd"
+    files = glob.glob(pat)
+    for file in files:
+        get_coarse_grained_snaps(file, dx=dx, folder=folder)
+
+
+if __name__ == "__main__":
+    # folder = "/mnt/sda/active_KM/snap"
+    # dx = 4
+
+    # fname = f"{folder}/L2880_2880_r1_v1_T0.1_s0.1_D0.0000_h0.1_S3000.gsd"
+    # get_coarse_grained_snaps(fname, dx=dx, folder=folder)
+    update_coarse_grained_fields(Lx=4096)
